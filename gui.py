@@ -161,11 +161,13 @@ class FaceSearchApp:
         logging.info(f"Number of occurrences found: {len(occurrences)}")
 
         def process_images():
-            for i, filename in enumerate(occurrences):
+            for i, occurrence in enumerate(occurrences):
+                filename = occurrence['filename']
+                bounding_box = occurrence['bounding_box']
                 image_path = os.path.join('images', filename)
                 if os.path.exists(image_path):
                     logging.info(f"Processing image: {image_path}")
-                    processed_image = self.process_image_with_face(image_path, face_id)
+                    processed_image = self.process_image_with_face(image_path, bounding_box)
                     self.image_queue.put((processed_image, filename))
                     logging.info(f"Processed image: {filename} ({i + 1}/{len(occurrences)})")
                 else:
@@ -192,21 +194,25 @@ class FaceSearchApp:
         result_window.after(100, update_ui)
 
 
-    def process_image_with_face(self, image_path, face_id):
-        # This method now returns the original image instead of processing it
+    def process_image_with_face(self, image_path, bounding_box):
         try:
-            image = face_recognition.load_image_file(image_path)
+            image = Image.open(image_path)
+            draw = ImageDraw.Draw(image)
             
-            # Convert the image to a PIL image to return it
-            pil_image = Image.fromarray(image)
+            # Face_recognition provides (top, right, bottom, left), adjust it to (x0, y0, x1, y1)
+            top, right, bottom, left = bounding_box
+            
+            # Draw bounding box
+            draw.rectangle([left, top, right, bottom], outline="yellow", width=30)
             
             # Optionally, you can resize the image if needed
-            pil_image.thumbnail((400, 400))
+            image.thumbnail((400, 400))
             
-            return pil_image
+            return image
         except Exception as e:
             logging.error(f"Error processing image {image_path}: {e}")
             return None
+
 
 
     def display_processed_image(self, parent_frame, pil_image, filename):

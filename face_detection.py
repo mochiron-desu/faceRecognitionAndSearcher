@@ -51,25 +51,40 @@ def process_images(image_folder, unique_faces_folder, collection):
                         'face_id': face_id,
                         'image_filename': face_path,
                         'face_encoding': encoded_face,
-                        'occurrences': [filename]
+                        'occurrences': [{
+                            'filename': filename,
+                            'bounding_box': face_location
+                        }]
                     }
 
                     save_face_to_db(collection, face_data)
                     logging.info(f"Saved unique face ID {face_id} to database with path: {face_path}")
                     
-                    face_occurrences[face_id] = [filename]
+                    face_occurrences[face_id] = [{
+                        'filename': filename,
+                        'bounding_box': face_location
+                    }]
                     unique_face_count += 1
                 else:
                     logging.info(f"Found existing face ID {existing_face_id} in image: {filename}")
                     # Update the occurrences for the existing face
                     collection.update_one(
                         {'face_id': existing_face_id},
-                        {'$addToSet': {'occurrences': filename}}
+                        {'$push': {'occurrences': {
+                            'filename': filename,
+                            'bounding_box': face_location
+                        }}}
                     )
                     if existing_face_id in face_occurrences:
-                        face_occurrences[existing_face_id].append(filename)
+                        face_occurrences[existing_face_id].append({
+                            'filename': filename,
+                            'bounding_box': face_location
+                        })
                     else:
-                        face_occurrences[existing_face_id] = [filename]
+                        face_occurrences[existing_face_id] = [{
+                            'filename': filename,
+                            'bounding_box': face_location
+                        }]
 
     return unique_face_count, face_occurrences
 
