@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 import logging
 
-FACE_SIMILARITY_TOLARANCE = 0.6
+FACE_SIMILARITY_TOLARANCE = 0.55
 
 # Configure logging
 logging.basicConfig(
