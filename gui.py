@@ -21,9 +21,9 @@ logging.basicConfig(
 class FaceSearchApp:
     def __init__(self, master):
         self.master = master
-        self.master.title("Face Search Application")
-        self.master.geometry("900x700")
-        self.master.configure(bg="#f0f0f0")
+        self.master.title("Face Search")
+        self.master.geometry("1000x800")
+        self.master.configure(bg="#f5f5f5")
 
         self.collection = connect_to_db()
         
@@ -35,36 +35,37 @@ class FaceSearchApp:
         self.load_faces()
 
     def create_widgets(self):
+        self.master.grid_columnconfigure(0, weight=1)
+        self.master.grid_rowconfigure(1, weight=1)
+
         # Title
-        title_label = tk.Label(self.master, text="Face Search Application", font=("Helvetica", 24, "bold"), bg="#f0f0f0")
-        title_label.pack(pady=20)
+        title_label = tk.Label(self.master, text="Face Search", font=("Helvetica", 28, "bold"), bg="#f5f5f5", fg="#333333")
+        title_label.grid(row=0, column=0, pady=(20, 10), sticky="ew")
 
         # Main frame
-        main_frame = tk.Frame(self.master, bg="#f0f0f0")
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        main_frame = tk.Frame(self.master, bg="#ffffff", bd=0, highlightthickness=0)
+        main_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=10)
+        main_frame.grid_columnconfigure(0, weight=1)
+        main_frame.grid_rowconfigure(0, weight=1)
 
         # Faces frame with scrollbar
-        faces_frame = tk.Frame(main_frame, bg="#ffffff", bd=2, relief=tk.GROOVE)
-        faces_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-
-        self.canvas = tk.Canvas(faces_frame, bg="#ffffff")
-        scrollbar = ttk.Scrollbar(faces_frame, orient="horizontal", command=self.canvas.xview)
+        self.canvas = tk.Canvas(main_frame, bg="#ffffff", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=self.canvas.yview)
         self.images_frame = tk.Frame(self.canvas, bg="#ffffff")
 
-        self.canvas.configure(xscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        self.canvas.grid(row=0, column=0, sticky="nsew")
 
         self.canvas.create_window((0, 0), window=self.images_frame, anchor="nw")
         self.images_frame.bind("<Configure>", self.on_frame_configure)
 
         # Search button
-        self.search_button = ttk.Button(main_frame, text="Search Selected Face", command=self.search_selected_face, style="TButton")
-        self.search_button.pack(pady=20)
-
-        # Configure ttk styles
         style = ttk.Style()
         style.configure("TButton", padding=10, font=("Helvetica", 12))
+        style.configure("Search.TButton", background="#4CAF50", foreground="white")
+        self.search_button = ttk.Button(self.master, text="Search Selected Face", command=self.search_selected_face, style="Search.TButton")
+        self.search_button.grid(row=2, column=0, pady=20)
 
     def on_frame_configure(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -78,13 +79,13 @@ class FaceSearchApp:
     def display_face(self, filename):
         face_id = os.path.splitext(filename)[0]
 
-        frame = tk.Frame(self.images_frame, bg="#ffffff", bd=2, relief=tk.RAISED)
-        frame.pack(side=tk.LEFT, padx=10, pady=10)
+        frame = tk.Frame(self.images_frame, bg="#ffffff", bd=0, highlightthickness=0)
+        frame.grid(padx=5, pady=5, sticky="nsew")
 
         image_path = os.path.join('./unique_faces', filename)
         try:
             image = Image.open(image_path)
-            image.thumbnail((120, 120))
+            image.thumbnail((100, 100))
             photo = ImageTk.PhotoImage(image)
 
             label = tk.Label(frame, image=photo, bg="#ffffff")
@@ -128,14 +129,14 @@ class FaceSearchApp:
         logging.info(f"Displaying search results for Face ID: {face_id}")
 
         result_window = Toplevel(self.master)
-        result_window.title(f"Search Results for Face ID: {face_id}")
-        result_window.geometry("900x700")
-        result_window.configure(bg="#f0f0f0")
+        result_window.title(f"Search Results: Face ID {face_id}")
+        result_window.geometry("1000x800")
+        result_window.configure(bg="#f5f5f5")
 
-        title_label = tk.Label(result_window, text=f"Search Results for Face ID: {face_id}", font=("Helvetica", 18, "bold"), bg="#f0f0f0")
+        title_label = tk.Label(result_window, text=f"Search Results: Face ID {face_id}", font=("Helvetica", 24, "bold"), bg="#f5f5f5", fg="#333333")
         title_label.pack(pady=20)
 
-        canvas = tk.Canvas(result_window, bg="#ffffff")
+        canvas = tk.Canvas(result_window, bg="#ffffff", highlightthickness=0)
         scrollbar = ttk.Scrollbar(result_window, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg="#ffffff")
 
@@ -193,32 +194,26 @@ class FaceSearchApp:
         threading.Thread(target=process_images, daemon=True).start()
         result_window.after(100, update_ui)
 
-
     def process_image_with_face(self, image_path, bounding_box):
         try:
             image = Image.open(image_path)
             draw = ImageDraw.Draw(image)
             
-            # Face_recognition provides (top, right, bottom, left), adjust it to (x0, y0, x1, y1)
             top, right, bottom, left = bounding_box
             
-            # Draw bounding box
-            draw.rectangle([left, top, right, bottom], outline="yellow", width=30)
+            draw.rectangle([left, top, right, bottom], outline="#FF4081", width=3)
             
-            # Optionally, you can resize the image if needed
-            image.thumbnail((400, 400))
+            image.thumbnail((300, 300))
             
             return image
         except Exception as e:
             logging.error(f"Error processing image {image_path}: {e}")
             return None
 
-
-
     def display_processed_image(self, parent_frame, pil_image, filename):
         if pil_image:
-            frame = tk.Frame(parent_frame, bg="#ffffff", bd=2, relief=tk.GROOVE)
-            frame.pack(pady=10, padx=10, fill=tk.X)
+            frame = tk.Frame(parent_frame, bg="#ffffff", bd=0, highlightthickness=0)
+            frame.pack(pady=10, padx=10, side=tk.LEFT)
 
             photo = ImageTk.PhotoImage(pil_image)
             label = tk.Label(frame, image=photo, bg="#ffffff")
