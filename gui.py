@@ -80,7 +80,13 @@ class FaceSearchApp:
         face_id = os.path.splitext(filename)[0]
 
         frame = tk.Frame(self.images_frame, bg="#ffffff", bd=0, highlightthickness=0)
-        frame.grid(padx=5, pady=5, sticky="nsew")
+
+        # Track the total number of images and calculate row and column for the grid
+        total_faces = len(self.face_frames)
+        row = total_faces // 5  # 5 columns per row
+        column = total_faces % 5
+
+        frame.grid(row=row, column=column, padx=5, pady=5, sticky="nsew")
 
         image_path = os.path.join('./unique_faces', filename)
         try:
@@ -102,6 +108,7 @@ class FaceSearchApp:
             label.bind("<Button-1>", lambda event, idx=len(self.face_ids)-1: self.select_face(idx))
         except Exception as e:
             logging.error(f"Error loading image {image_path}: {e}")
+
 
     def select_face(self, index):
         if self.selected_face_index is not None:
@@ -201,7 +208,7 @@ class FaceSearchApp:
             
             top, right, bottom, left = bounding_box
             
-            draw.rectangle([left, top, right, bottom], outline="#FF4081", width=3)
+            draw.rectangle([left, top, right, bottom], outline="#FF4081", width=30)
             
             image.thumbnail((300, 300))
             
@@ -212,8 +219,13 @@ class FaceSearchApp:
 
     def display_processed_image(self, parent_frame, pil_image, filename):
         if pil_image:
+            # Track the total number of processed images
+            total_images = len(parent_frame.winfo_children())
+            row = total_images // 3  # 3 columns per row
+            column = total_images % 3
+
             frame = tk.Frame(parent_frame, bg="#ffffff", bd=0, highlightthickness=0)
-            frame.pack(pady=10, padx=10, side=tk.LEFT)
+            frame.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
 
             photo = ImageTk.PhotoImage(pil_image)
             label = tk.Label(frame, image=photo, bg="#ffffff")
@@ -222,6 +234,7 @@ class FaceSearchApp:
 
             filename_label = tk.Label(frame, text=os.path.basename(filename), bg="#ffffff", font=("Helvetica", 10))
             filename_label.pack()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
